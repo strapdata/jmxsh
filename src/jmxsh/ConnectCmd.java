@@ -1,8 +1,8 @@
 /*
  * $URL$
- * 
- * $Revision$ 
- * 
+ *
+ * $Revision$
+ *
  * $LastChangedDate$
  *
  * $LastChangedBy$
@@ -18,15 +18,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- * 
+ *
  */
 package jmxsh;
 
 /**
  * ConnectCmd.java
- * 
+ *
  * Tcl Command to connect via JMX to a running process.
- * 
+ *
  * @author robspassky
  */
 
@@ -62,7 +62,7 @@ class ConnectCmd implements Command {
 		         .hasArg()
 		         .create("s")
 	);
-	
+
 	this.opts.addOption(
 	    OptionBuilder.withLongOpt("host")
 		         .withDescription("Host to connect to.")
@@ -70,7 +70,7 @@ class ConnectCmd implements Command {
 		         .hasArg()
 		         .create("h")
 	);
-	
+
 	this.opts.addOption(
 	    OptionBuilder.withLongOpt("port")
 		         .withDescription("Port to connect to.")
@@ -78,7 +78,7 @@ class ConnectCmd implements Command {
 		         .hasArg()
 		         .create("p")
 	);
-	
+
 	this.opts.addOption(
 	    OptionBuilder.withLongOpt("url_path")
 		         .withDescription("Path portion of the JMX Service URL.")
@@ -86,7 +86,7 @@ class ConnectCmd implements Command {
 		         .hasArg()
 		         .create("T")
 	);
-	
+
 	this.opts.addOption(
 	    OptionBuilder.withLongOpt("user")
 		         .withArgName("USER")
@@ -94,7 +94,7 @@ class ConnectCmd implements Command {
 		         .withDescription("Connect with this username.")
 		         .create("U")
 	);
-	
+
 	this.opts.addOption(
 	    OptionBuilder.withLongOpt("password")
 		         .withArgName("PASSWORD")
@@ -102,7 +102,7 @@ class ConnectCmd implements Command {
 		         .withDescription("Connect with this password.")
 		         .create("P")
 	);
-	
+
 	this.opts.addOption(
 	    OptionBuilder.withLongOpt("help")
 		         .withDescription("Display usage help.")
@@ -111,34 +111,35 @@ class ConnectCmd implements Command {
 	);
 
 	this.opts.addOption(
-	    OptionBuilder.withLongOpt("protocol")
-		         .withDescription("Choose a connection protocol (rmi|jmxmp), default rmi.")
-		         .hasArg(true)
-		         .withArgName("PROTOCOL")
-		         .create("R")
-	);
+	        OptionBuilder.withLongOpt("ssl")
+	                 .withDescription("Add SSL/TLS support.")
+	                 .hasArg(false)
+	                 .create("S")
+	    );
     }
 
-    private CommandLine parseCommandLine(TclObject argv[]) 
+    private CommandLine parseCommandLine(TclObject argv[])
 	throws ParseException {
 
 	String[] args = new String[argv.length - 1];
-	    
+
 	for(int i = 0; i < argv.length - 1; i++)
 	    args[i] = argv[i + 1].toString();
-	    
+
 	CommandLine cl = (new PosixParser()).parse(this.opts, args);
 	return cl;
     }
 
-    private void connect(CommandLine commandLine) { 
+    private void connect(CommandLine commandLine) {
 	String serverUrl = commandLine.getOptionValue("server");
 	String host = commandLine.getOptionValue("host");
 	String protocol = commandLine.getOptionValue("protocol", "rmi");
 	String path = commandLine.getOptionValue("url_path");
 	String user = commandLine.getOptionValue("user");
 	String password = commandLine.getOptionValue("password");
-	int port = -1;
+	boolean ssl = commandLine.hasOption("ssl");
+
+    int port = -1;
 	if (commandLine.hasOption("port")) {
 	    port = Integer.parseInt(commandLine.getOptionValue("port"));
 	}
@@ -152,10 +153,10 @@ class ConnectCmd implements Command {
 	}
 
 	if (serverUrl != null) {
-	    Jmx.getInstance().connect(serverUrl, user, password);
+	    Jmx.getInstance().connect(serverUrl, ssl, user, password);
 	}
 	else {
-	    Jmx.getInstance().connect(host, port, protocol, path, user, password);
+	    Jmx.getInstance().connect(host, port, protocol, ssl, path, user, password);
 	}
     }
 
@@ -165,11 +166,11 @@ class ConnectCmd implements Command {
 
         try {
 	    CommandLine cl = parseCommandLine(argv);
-	    
+
 	    if (cl.hasOption("help")) {
 		new HelpFormatter().printHelp (
 		    "jmx_connect ",
-		    "======================================================================", 
+		    "======================================================================",
 		    this.opts,
 		    "======================================================================",
 		    true
